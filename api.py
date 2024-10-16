@@ -1,7 +1,7 @@
 from flask import Flask, request, jsonify
 import joblib
 import numpy as np
-from waitress import serve
+from threading import Thread
 import warnings
 from sklearn.exceptions import InconsistentVersionWarning
 
@@ -31,6 +31,35 @@ def predict_route():
 
     return jsonify({'prediction': int(prediction[0])})  # Devolver la predicción
 
-if __name__ == '__main__':
-    # Servir la aplicación usando waitress
-    serve(app, host='0.0.0.0', port=8000)
+def run_flask():
+    app.run(host='0.0.0.0', port=8000)
+
+# Correr Flask en un hilo separado
+Thread(target=run_flask).start()
+
+# Código de Streamlit
+import streamlit as st
+import requests
+
+st.title("Predicción con Modelo de Machine Learning")
+
+# Inputs para la predicción
+input_data = st.text_input("Ingresa tus datos de entrada (separados por comas)")
+
+if st.button("Predecir"):
+    try:
+        # Convertir los datos de entrada a una lista de flotantes
+        input_array = np.array([float(x) for x in input_data.split(',')]).reshape(1, -1)
+        
+        # Realizar la solicitud a la API Flask
+        response = requests.post("http://localhost:8000/predict", json={"input": input_array.tolist()})
+        
+        if response.status_code == 200:
+            prediction = response.json()["prediction"]
+            st.success(f"La predicción es: {prediction}")
+        else:
+            st.error("Error al obtener la predicción.")
+    except ValueError:
+        st.error("Por favor ingresa datos válidos.")
+    except Exception as e:
+        st.error(f"Ocurrió un error: {e}")

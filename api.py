@@ -5,6 +5,9 @@ from threading import Thread
 import warnings
 from sklearn.exceptions import InconsistentVersionWarning
 
+from flask_cors import CORS
+
+
 # Ignorar advertencias de versiones inconsistentes
 warnings.filterwarnings("ignore", category=InconsistentVersionWarning)
 
@@ -15,6 +18,8 @@ def load_model():
 
 # Inicializar la aplicación Flask
 app = Flask(__name__)
+
+CORS(app)
 
 # Cargar el modelo globalmente para eficiencia
 model = load_model()

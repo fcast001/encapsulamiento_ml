@@ -5,27 +5,32 @@ from waitress import serve
 import warnings
 from sklearn.exceptions import InconsistentVersionWarning
 
+# Ignorar advertencias de versiones inconsistentes
 warnings.filterwarnings("ignore", category=InconsistentVersionWarning)
 
-# Function to load the saved model
+# Función para cargar el modelo guardado
 def load_model():
     model = joblib.load('Model/pkl/rf_model.pkl')
     return model
 
-# Initialize Flask app
+# Inicializar la aplicación Flask
 app = Flask(__name__)
 
-# Load the model globally for efficiency
+# Cargar el modelo globalmente para eficiencia
 model = load_model()
 
-# Define a route for making predictions
+# Definir una ruta para hacer predicciones
 @app.route('/predict', methods=['POST'])
 def predict_route():
-    data = request.get_json()  # Get input data from POST request
-    input_data = np.array(data['input']).reshape(1, -1)  # Reshape input
+    data = request.get_json()  # Obtener datos de entrada de la solicitud POST
+    if 'input' not in data:
+        return jsonify({'error': 'No input data provided'}), 400  # Manejo de errores
+
+    input_data = np.array(data['input']).reshape(1, -1)  # Dar forma a la entrada
     prediction = model.predict(input_data)
-    return jsonify({'prediction': int(prediction[0])})
+
+    return jsonify({'prediction': int(prediction[0])})  # Devolver la predicción
 
 if __name__ == '__main__':
-    # Serve the app using waitress
+    # Servir la aplicación usando waitress
     serve(app, host='0.0.0.0', port=8000)
